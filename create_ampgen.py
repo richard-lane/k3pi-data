@@ -26,24 +26,15 @@ def _ampgen_df(tree, sign: str) -> pd.DataFrame:
     t_branch = "Dbar0_decayTime" if sign == "cf" else "D0_decayTime"
     df["time"] = tree[t_branch].array() * 1000 / 0.41  # Convert to d lifetimes
 
-    suffixes = "Px", "Py", "Pz", "E"
-
     # Expect to have K+3pi AmpGen
     branches = [
-        *(f"_1_K~_{s}" for s in suffixes),
-        *(f"_2_pi#_{s}" for s in suffixes),
-        *(f"_3_pi#_{s}" for s in suffixes),
-        *(f"_4_pi~_{s}" for s in suffixes),
+        *(f"_1_K~_{s}" for s in definitions.MOMENTUM_SUFFICES),
+        *(f"_2_pi#_{s}" for s in definitions.MOMENTUM_SUFFICES),
+        *(f"_3_pi#_{s}" for s in definitions.MOMENTUM_SUFFICES),
+        *(f"_4_pi~_{s}" for s in definitions.MOMENTUM_SUFFICES),
     ]
 
-    columns = [
-        *(f"Kplus_{s}" for s in suffixes),
-        *(f"pi1minus_{s}" for s in suffixes),
-        *(f"pi2minus_{s}" for s in suffixes),
-        *(f"pi3plus_{s}" for s in suffixes),
-    ]
-
-    for branch, column in zip(branches, columns):
+    for branch, column in zip(branches, definitions.MOMENTUM_COLUMNS):
         df[column] = tree[branch].array() * 1000  # Convert to MeV
 
     return df
