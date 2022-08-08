@@ -67,6 +67,9 @@ def _real_df(tree) -> pd.DataFrame:
     df["D0 mass"] = tree["Dst_ReFit_D0_M"].array()[:, 0][keep]
     df["D* mass"] = tree["Dst_ReFit_M"].array()[:, 0][keep]
 
+    # Slow pi ID
+    df["slow pi ID"] = tree["Dst_ReFit_piplus_ID"].array()[:, 0][keep]
+
     return df
 
 
