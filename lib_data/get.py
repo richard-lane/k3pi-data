@@ -4,6 +4,7 @@ Functions for getting the dataframes once they've been dumped
 """
 import glob
 import pickle
+from typing import Generator
 import pandas as pd
 from tqdm import tqdm
 
@@ -55,3 +56,20 @@ def particle_gun(sign: str, show_progress: bool = False) -> pd.DataFrame:
             raise err
 
     return pd.concat(dfs)
+
+
+def data(
+    year: str, sign: str, magnetisation: str
+) -> Generator[pd.DataFrame, None, None]:
+    """
+    Get the particle gun dataframes, concatenate them and return
+
+    :param year: data taking year
+    :param sign: "cf" or "dcs"
+    :param magnetisation: "magup" or "magdown"
+
+    """
+    paths = glob.glob(str(definitions.data_dir(year, sign, magnetisation) / "*"))
+    for path in paths:
+        with open(path, "rb") as df_f:
+            yield pickle.load(df_f)

@@ -21,14 +21,21 @@ def _plot(points: List[np.ndarray], labels: List[str]) -> Tuple[plt.Figure, plt.
     Plot a list of points and labels on an axis; return the figure and axis
 
     """
+
     fig, ax = plt.subplots(2, 3, figsize=(12, 8))
 
     hist_kw = {"density": True, "histtype": "step"}
     for i, axis in tqdm(enumerate(ax.ravel())):
         for arr, label in zip(points, labels):
+            # Might want to plot up to some maximum lifetime, to illustrate something
+            max_lifetimes = np.inf
+            mask = arr[:, -1] < max_lifetimes
+
             # Set the bins by finding automatic bin limits for the first set of points
             if "bins" not in hist_kw:
-                _, bins, _ = axis.hist(arr[:, i], bins=100, **hist_kw, label=label)
+                _, bins, _ = axis.hist(
+                    arr[:, i][mask], bins=100, **hist_kw, label=label
+                )
                 hist_kw["bins"] = bins
 
             else:
@@ -37,7 +44,7 @@ def _plot(points: List[np.ndarray], labels: List[str]) -> Tuple[plt.Figure, plt.
         # Remove the bins from the dict once we've plotted all the points
         hist_kw.pop("bins")
 
-    ax[0, 0].legend()
+    ax.ravel()[-1].legend()
 
     return fig, ax
 
@@ -64,6 +71,14 @@ def main():
     Create a plot
 
     """
+    # These return generators
+    rs_data = _parameterise(
+        util.flip_momenta(pd.concat(get.data("2018", "cf", "magdown")))
+    )
+    ws_data = _parameterise(
+        util.flip_momenta(pd.concat(get.data("2018", "dcs", "magdown")))
+    )
+
     rs_pgun = _parameterise(
         util.flip_momenta(get.particle_gun("cf", show_progress=True))
     )
@@ -75,8 +90,8 @@ def main():
     ws_ampgen = _parameterise(get.ampgen("dcs"))
 
     _plot(
-        [rs_pgun, ws_pgun, rs_ampgen, ws_ampgen],
-        ["CF pgun", "DCS pgun", "CF AmpGen", "DCS AmpGen"],
+        [rs_data, rs_pgun, rs_ampgen, ws_data, ws_pgun, ws_ampgen],
+        ["CF data", "CF pgun", "CF AmpGen", "DCS data", "DCS pgun", "DCS AmpGen"],
     )
 
     plt.show()

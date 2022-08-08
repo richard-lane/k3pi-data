@@ -3,6 +3,7 @@ Useful definitions and things
 
 """
 import pathlib
+from typing import List
 
 DUMP_DIR = pathlib.Path(__file__).resolve().parents[1] / "dumps"
 
@@ -26,6 +27,20 @@ WS_PGUN_SOURCE_DIR = pathlib.Path(
 )
 
 PGUN_DIR = DUMP_DIR / "pgun"
+DATA_DIR = DUMP_DIR / "data"
+
+
+def data_tree(sign: str) -> str:
+    """
+    Name of the tree in real data
+
+    """
+    assert sign in {"cf", "dcs"}
+    return (
+        "Hlt2Dstp2D0Pip_D02KmPimPipPip_Tuple/DecayTree"
+        if sign == "cf"
+        else "Hlt2Dstp2D0Pip_D02KpPimPimPip_Tuple/DecayTree"
+    )
 
 
 def ampgen_dump(sign: str) -> pathlib.Path:
@@ -60,3 +75,65 @@ def pgun_dump(sign: str, n: int) -> pathlib.Path:
 
     """
     return pgun_dir(sign) / f"{n}.pkl"
+
+
+def data_dir(year: str, sign: str, magnetisation: str) -> pathlib.Path:
+    """
+    Returns the location of a directory particle gun dumps
+
+    :param sign: "cf" or "dcs"
+    :param year: data taking year
+    :param magnetisation: "magup" or "magdown"
+    :returns: absolute path to the dir used for storing this data
+
+    """
+    assert sign in {"cf", "dcs"}
+    assert year in {"2018"}
+    assert magnetisation in {"magup", "magdown"}
+
+    return DATA_DIR / f"{year}_{sign}_{magnetisation}"
+
+
+def data_files(year: str, magnetisation: str) -> List[str]:
+    """
+    Paths to real data analysis productions on lxplus (or the grid maybe).
+
+    :param year: data taking year
+    :param magnetisation: "magup" or "magdown"
+    :returns: list of paths as strings
+
+    """
+    assert year in {"2018"}
+    assert magnetisation in {"magup", "magdown"}
+
+    # File holding locations of productions
+    pfn_file = (
+        pathlib.Path(__file__).resolve().parents[1]
+        / "production_locations"
+        / "real_data"
+        / f"{year}_{magnetisation}_dd.txt"
+    )
+
+    with open(pfn_file, "r") as f:
+        return [line.strip() for line in f.readlines()]
+
+
+def data_dump(data_file: str, year: str, sign: str, magnetisation: str) -> pathlib.Path:
+    """
+    Paths to the pickle dump corresponding to a data file.
+    Idea is to pass a file returned from `data_files()` as `data_file`
+
+    :param data_file: location of analysis production, e.g. as returned by data_files()
+    :param year: data taking year
+    :param sign: "cf" or "dcs"
+    :param magnetisation: "magup" or "magdown"
+    :returns: path to the dump location
+
+    """
+    assert sign in {"cf", "dcs"}
+    assert year in {"2018"}
+    assert magnetisation in {"magup", "magdown"}
+
+    data_file = pathlib.Path(data_file)
+
+    return data_dir(year, sign, magnetisation) / f"{data_file.with_suffix('').name}.pkl"

@@ -104,7 +104,7 @@ def _hlt_keep(tree) -> np.ndarray:
     )
 
 
-def hlt_keep(tree) -> np.ndarray:
+def trigger_keep(tree) -> np.ndarray:
     """
     Boolean mask of events to keep after HLT cuts
 
