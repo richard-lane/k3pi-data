@@ -226,6 +226,7 @@ def training_var_functions() -> Tuple:
 
     """
     return (
+        refit_chi2,
         endvertex_chi2,
         orivx_chi2,
         slow_pi_prob_nn_pi,
@@ -249,6 +250,7 @@ def training_var_names() -> Tuple:
 
     """
     return (
+        r"ReFit $\chi^2$",
         r"D0 End Vtx $\chi^2$",
         r"D0 Origin Vtx $\chi^2$",
         r"$\pi_s$ ProbNN$\pi$",
