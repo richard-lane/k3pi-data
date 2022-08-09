@@ -87,3 +87,21 @@ def momentum_order(
     new_pi2[:, inv_mask] = pi2[:, inv_mask]
 
     return new_pi1, new_pi2
+
+
+def add_train_column(
+    gen: np.random.Generator, dataframe: pd.DataFrame, train_fraction: float = 0.5
+) -> None:
+    """
+    Use a random number generator to add a boolean column for training to a
+    dataframe in place
+
+    :param gen: RNG
+    :param dataframe: dataframe to add a boolean column titled "train" to.
+                      Adds this column in place
+    :param train_fraction: approx proportion of True in the column
+
+    """
+    assert (0.0 <= train_fraction) and (train_fraction <= 1.0)
+
+    dataframe["train"] = gen.random(len(dataframe)) < train_fraction

@@ -15,6 +15,7 @@ from tqdm import tqdm
 from lib_data import definitions
 from lib_data import cuts
 from lib_data import training_vars
+from lib_data import util
 
 
 def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
@@ -37,7 +38,7 @@ def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
         df[column] = tree[branch].array()[:, 0][keep]
 
 
-def _mc_df(tree) -> pd.DataFrame:
+def _mc_df(gen: np.random.Generator, tree) -> pd.DataFrame:
     """
     Populate a pandas dataframe with momenta, time and other arrays from the provided trees
 
@@ -76,6 +77,9 @@ def _mc_df(tree) -> pd.DataFrame:
     df["D0 mass"] = tree["Dst_ReFit_D0_M"].array()[:, 0][keep]
     df["D* mass"] = tree["Dst_ReFit_M"].array()[:, 0][keep]
 
+    # Train test
+    util.add_train_column(gen, df)
+
     return df
 
 
@@ -91,6 +95,9 @@ def main(year: str, sign: str, magnetisation: str) -> None:
         print(f"{dump_path} already exists")
         return
 
+    # RNG for train test
+    gen = np.random.default_rng(seed=0)
+
     # Iterate over input files
     dfs = []
     for data_path in tqdm(definitions.mc_files(year, magnetisation, sign)):
@@ -98,7 +105,7 @@ def main(year: str, sign: str, magnetisation: str) -> None:
             tree = data_f[definitions.data_tree(sign)]
 
             # Create the dataframe
-            dfs.append(_mc_df(tree))
+            dfs.append(_mc_df(gen, tree))
 
     # Concatenate dataframes and dump
     with open(dump_path, "wb") as dump_f:

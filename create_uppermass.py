@@ -9,7 +9,9 @@ The data lives on lxplus; this script should therefore be run on lxplus.
 """
 import os
 import pickle
+import pathlib
 import argparse
+from multiprocessing import Pool
 import uproot
 import numpy as np
 import pandas as pd
@@ -18,6 +20,7 @@ from tqdm import tqdm
 from lib_data import definitions
 from lib_data import cuts
 from lib_data import training_vars
+from lib_data import util
 
 
 def _bkg_keep(d_mass: np.ndarray, delta_m: np.ndarray) -> np.ndarray:
@@ -39,7 +42,7 @@ def _bkg_keep(d_mass: np.ndarray, delta_m: np.ndarray) -> np.ndarray:
     return d_mass_mask & delta_m_mask
 
 
-def _uppermass_df(tree) -> pd.DataFrame:
+def _uppermass_df(gen: np.random.Generator, tree) -> pd.DataFrame:
     """
     Populate a pandas dataframe information used for the classification
 
@@ -74,7 +77,36 @@ def _uppermass_df(tree) -> pd.DataFrame:
     df["K ID"] = tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
     df["slow pi ID"] = tree["Dst_ReFit_piplus_ID"].array()[:, 0][keep]
 
+    # Train test
+    util.add_train_column(gen, df)
+
     return df
+
+
+def _create_dump(
+    data_path: pathlib.Path, dump_path: pathlib.Path, tree_name: str
+) -> None:
+    """
+    Create a pickle dump of a dataframe
+
+    """
+    # If the dump already exists, do nothing
+    if dump_path.is_file():
+        return
+
+    # Create a new random generator every time
+    # This isn't very good, but also it isn't a disaster
+    # As long as the seed is actually random
+    gen = np.random.default_rng()
+
+    with uproot.open(data_path) as data_f:
+        # Create the dataframe
+        dataframe = _uppermass_df(gen, data_f[tree_name])
+
+    # Dump it
+    print(f"dumping {dump_path}")
+    with open(dump_path, "wb") as dump_f:
+        pickle.dump(dataframe, dump_f)
 
 
 def main(year: str, sign: str, magnetisation: str) -> None:
@@ -86,20 +118,20 @@ def main(year: str, sign: str, magnetisation: str) -> None:
         os.mkdir(definitions.uppermass_dir(year, sign, magnetisation))
 
     # Iterate over input files
-    tree_name = definitions.data_tree(sign)
-    for path in tqdm(definitions.data_files(year, magnetisation)):
-        # If the dump already exists, do nothing
-        dump_path = definitions.uppermass_dump(path, year, sign, magnetisation)
-        if dump_path.is_file():
-            continue
+    data_paths = definitions.data_files(year, magnetisation)
+    dump_paths = [
+        definitions.uppermass_dump(path, year, sign, magnetisation)
+        for path in data_paths
+    ]
 
-        with uproot.open(path) as data_f:
-            # Create the dataframe
-            dataframe = _uppermass_df(data_f[tree_name])
+    # Ugly - also have a list of tree names so i can use a starmap
+    tree_names = [definitions.data_tree(sign) for _ in dump_paths]
 
-        # Dump it
-        with open(dump_path, "wb") as dump_f:
-            pickle.dump(dataframe, dump_f)
+    with Pool(processes=6) as pool:
+        tqdm(
+            pool.starmap(_create_dump, zip(data_paths, dump_paths, tree_names)),
+            total=len(dump_paths),
+        )
 
 
 if __name__ == "__main__":
