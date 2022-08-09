@@ -73,17 +73,20 @@ def _mc_df(tree) -> pd.DataFrame:
     # Read other variables - for e.g. the BDT cuts, kaon signs, etc.
     df["K ID"] = tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
 
+    df["D0 mass"] = tree["Dst_ReFit_D0_M"].array()[:, 0][keep]
+    df["D* mass"] = tree["Dst_ReFit_M"].array()[:, 0][keep]
+
     return df
 
 
 def main(year: str, sign: str, magnetisation: str) -> None:
-    """ Create a DataFrame holding MC momenta """
+    """Create a DataFrame holding MC momenta"""
     # If the dir doesnt exist, create it
     if not definitions.MC_DIR.is_dir():
         os.mkdir(definitions.MC_DIR)
 
     # If the dump already exists, do nothing
-    dump_path = definitions.mc_dump(sign)
+    dump_path = definitions.mc_dump(year, sign, magnetisation)
     if dump_path.is_file():
         print(f"{dump_path} already exists")
         return

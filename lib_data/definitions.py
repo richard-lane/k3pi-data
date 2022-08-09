@@ -83,7 +83,7 @@ def mc_files(year: str, magnetisation: str, sign: str) -> List[str]:
         return [line.strip() for line in f.readlines()]
 
 
-def mc_dump(sign: str) -> pathlib.Path:
+def mc_dump(year: str, sign: str, magnetisation: str) -> pathlib.Path:
     """
     Returns the location of the MC dump
 
@@ -92,7 +92,7 @@ def mc_dump(sign: str) -> pathlib.Path:
     """
     assert sign in {"cf", "dcs"}
 
-    return MC_DIR / f"{sign}.pkl"
+    return MC_DIR / f"{year}_{sign}_{magnetisation}.pkl"
 
 
 def pgun_dir(sign: str) -> pathlib.Path:
