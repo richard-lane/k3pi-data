@@ -29,8 +29,8 @@ def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
     branches = (
         *(f"Dst_ReFit_D0_Kplus_{s}" for s in suffices),
         *(f"Dst_ReFit_D0_piplus_{s}" for s in suffices),
-        *(f"Dst_ReFit_D0_piplus_1_{s}" for s in suffices),
         *(f"Dst_ReFit_D0_piplus_0_{s}" for s in suffices),
+        *(f"Dst_ReFit_D0_piplus_1_{s}" for s in suffices),
     )
 
     for branch, column in zip(branches, definitions.MOMENTUM_COLUMNS):
