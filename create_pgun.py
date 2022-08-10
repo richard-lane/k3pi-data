@@ -38,7 +38,7 @@ def _add_momenta(df: pd.DataFrame, data_tree, keep: np.ndarray) -> None:
         df[column] = data_tree[branch].array()[:, 0][keep]
 
 
-def _pgun_df(data_tree, hlt_tree, sign: str) -> pd.DataFrame:
+def _pgun_df(gen: np.random.Generator, data_tree, hlt_tree, sign: str) -> pd.DataFrame:
     """
     Populate a pandas dataframe with momenta, time and other arrays from the provided trees
 
@@ -68,6 +68,8 @@ def _pgun_df(data_tree, hlt_tree, sign: str) -> pd.DataFrame:
     # Read other variables - for e.g. the BDT cuts, kaon signs, etc.
     df["K ID"] = data_tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
 
+    util.add_train_column(gen, df)
+
     return df
 
 
@@ -88,6 +90,9 @@ def main(sign: str) -> None:
     # Keep track of which folders broke - this might be expected
     broken_folders = []
 
+    # Generator for train/test RNG
+    gen = np.random.default_rng()
+
     # Iterate over input files
     for folder in tqdm(tuple(source_dir.glob("*"))):
         # If the dump already exists, do nothing
@@ -105,7 +110,7 @@ def main(sign: str) -> None:
                 hlt_tree = hlt_f["DecayTree"]
 
                 # Create the dataframe
-                dataframe = _pgun_df(data_tree, hlt_tree, sign)
+                dataframe = _pgun_df(gen, data_tree, hlt_tree, sign)
 
             # Dump it
             with open(dump_path, "wb") as dump_f:
