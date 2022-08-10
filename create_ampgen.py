@@ -1,8 +1,8 @@
 """
 Create AmpGen dataframes
 
-The AmpGen files are small enough that we can store the entire thing in one DataFrame (probably - it depends how many
-events you generate; I tested it with 1,000,000)
+The AmpGen files are small enough that we can store the entire thing in one DataFrame (probably -
+it depends how many events you generate; I tested it with 1,000,000)
 
 Should use D -> K+3pi AmpGen models
 
@@ -10,13 +10,15 @@ Should use D -> K+3pi AmpGen models
 import os
 import pickle
 import argparse
-import uproot
+import numpy as np
 import pandas as pd
+import uproot
 
 from lib_data import definitions
+from lib_data import util
 
 
-def _ampgen_df(tree, sign: str) -> pd.DataFrame:
+def _ampgen_df(gen: np.random.Generator, tree, sign: str) -> pd.DataFrame:
     """
     Populate a pandas dataframe with momenta and time arrays from the provided tree
 
@@ -28,14 +30,16 @@ def _ampgen_df(tree, sign: str) -> pd.DataFrame:
 
     # Expect to have K+3pi AmpGen
     branches = [
-        *(f"_1_K~_{s}" for s in definitions.MOMENTUM_SUFFICES),
-        *(f"_2_pi#_{s}" for s in definitions.MOMENTUM_SUFFICES),
-        *(f"_3_pi#_{s}" for s in definitions.MOMENTUM_SUFFICES),
-        *(f"_4_pi~_{s}" for s in definitions.MOMENTUM_SUFFICES),
+        *(f"_1_K~_{s}" for s in definitions.AMPGEN_MOMENTUM_SUFFICES),
+        *(f"_2_pi#_{s}" for s in definitions.AMPGEN_MOMENTUM_SUFFICES),
+        *(f"_3_pi#_{s}" for s in definitions.AMPGEN_MOMENTUM_SUFFICES),
+        *(f"_4_pi~_{s}" for s in definitions.AMPGEN_MOMENTUM_SUFFICES),
     ]
 
     for branch, column in zip(branches, definitions.MOMENTUM_COLUMNS):
         df[column] = tree[branch].array() * 1000  # Convert to MeV
+
+    util.add_train_column(gen, df)
 
     return df
 
@@ -47,8 +51,10 @@ def main(path: str, sign: str) -> None:
         os.mkdir(definitions.AMPGEN_DIR)
 
     # Read the dataframe
+    gen = np.random.default_rng()
+
     with uproot.open(path) as ag_f:
-        dataframe = _ampgen_df(ag_f["DalitzEventList"], sign)
+        dataframe = _ampgen_df(gen, ag_f["DalitzEventList"], sign)
 
     # Dump it
     with open(definitions.ampgen_dump(sign), "wb") as f:

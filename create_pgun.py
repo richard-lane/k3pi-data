@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from lib_data import definitions
 from lib_data import cuts
+from lib_data import util
 
 
 def _add_momenta(df: pd.DataFrame, data_tree, keep: np.ndarray) -> None:
@@ -38,7 +39,7 @@ def _add_momenta(df: pd.DataFrame, data_tree, keep: np.ndarray) -> None:
         df[column] = data_tree[branch].array()[:, 0][keep]
 
 
-def _pgun_df(gen: np.random.Generator, data_tree, hlt_tree, sign: str) -> pd.DataFrame:
+def _pgun_df(gen: np.random.Generator, data_tree, hlt_tree) -> pd.DataFrame:
     """
     Populate a pandas dataframe with momenta, time and other arrays from the provided trees
 
@@ -110,7 +111,7 @@ def main(sign: str) -> None:
                 hlt_tree = hlt_f["DecayTree"]
 
                 # Create the dataframe
-                dataframe = _pgun_df(gen, data_tree, hlt_tree, sign)
+                dataframe = _pgun_df(gen, data_tree, hlt_tree)
 
             # Dump it
             with open(dump_path, "wb") as dump_f:
