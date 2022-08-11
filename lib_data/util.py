@@ -9,6 +9,23 @@ import pandas as pd
 from . import definitions
 
 
+def convert_to_kplus(
+    k: np.ndarray, pi1: np.ndarray, pi2: np.ndarray, pi3: np.ndarray, k_id: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Flip 3 momenta of k 3pi by using the kaon IDs
+
+    """
+    to_flip = k_id < 0
+
+    k[1:][:, to_flip] *= -1
+    pi1[1:][:, to_flip] *= -1
+    pi2[1:][:, to_flip] *= -1
+    pi3[1:][:, to_flip] *= -1
+
+    return k, pi1, pi2, pi3
+
+
 def flip_momenta(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     In some cases, we may want to only consider one type of decay (e.g. D0 -> K+3pi
@@ -66,7 +83,8 @@ def momentum_order(
     :param pi1: pion parameters (px, py, pz, E)
     :param pi2: pion parameters (px, py, pz, E)
 
-    :returns: (lower_mass_pion, higher_mass_pion) as their pion parameters. Returns copies of the original arguments
+    :returns: (lower_mass_pion, higher_mass_pion) as their pion parameters.
+              Returns copies of the original arguments
 
     """
     new_pi1, new_pi2 = np.zeros((4, len(k.T))), np.zeros((4, len(k.T)))
