@@ -26,19 +26,17 @@ def convert_to_kplus(
     return k, pi1, pi2, pi3
 
 
-def flip_momenta(dataframe: pd.DataFrame) -> pd.DataFrame:
+def flip_momenta(dataframe: pd.DataFrame, to_flip=None) -> pd.DataFrame:
     """
     In some cases, we may want to only consider one type of decay (e.g. D0 -> K+3pi
     instead of both D0->K+3pi and Dbar0->K-3pi). In some of these cases, we may want
     to convert the K- type momenta to what it would be had the decay been to a K+ -
     i.e. we want to flip the 3 momentum by multiplying by -1.
 
-    This function returns a dataframe where 3 momenta are flipped for candidates
-    with K ID < 0 (since K+ ID is 321; K- is -321).
-
-    dataframe must have a "K ID" branch
-
     Returns a copy
+
+    :param to_flip: mask of candidates to flip. If not provided, then flips candidates
+                    where df["K_ID"] < 0
 
     """
 
@@ -48,7 +46,7 @@ def flip_momenta(dataframe: pd.DataFrame) -> pd.DataFrame:
         *definitions.MOMENTUM_COLUMNS[8:11],
         *definitions.MOMENTUM_COLUMNS[12:15],
     ]
-    to_flip = dataframe["K ID"].to_numpy() < 0
+    to_flip = dataframe["K ID"].to_numpy() < 0 if to_flip is None else to_flip
 
     df_copy = dataframe.copy()
     for col in flip_columns:
