@@ -12,7 +12,7 @@ Amplitude models for $D\rightarrow K+3\pi$.
 The only difference between an amplitude and its conjugate
 (e.g. $D^0\rightarrow K^+3\pi$ and $\bar{D}^0\rightarrow K^-3\pi$) should be the direction of the 3-momenta,
 so if we want to transform between them we just need to multiply the 3-momenta by -1.  
-We can do this by using the `flip_momenta` function [here](lib_data/util.py).
+We can do this by using the `flip_momenta` function [here](lib_data/util.py#L29).
 
 **Used for:** training the efficiency reweighter
 
