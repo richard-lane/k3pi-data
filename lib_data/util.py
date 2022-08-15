@@ -47,6 +47,7 @@ def flip_momenta(dataframe: pd.DataFrame, to_flip=None) -> pd.DataFrame:
         *definitions.MOMENTUM_COLUMNS[12:15],
     ]
     to_flip = dataframe["K ID"].to_numpy() < 0 if to_flip is None else to_flip
+    print(f"flipping {np.sum(to_flip)} momenta of {len(to_flip)}")
 
     df_copy = dataframe.copy()
     for col in flip_columns:
