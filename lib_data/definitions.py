@@ -24,9 +24,13 @@ RS_PGUN_SOURCE_DIR = pathlib.Path(
 WS_PGUN_SOURCE_DIR = pathlib.Path(
     "/eos/lhcb/user/n/njurik/D02Kpipipi/PGun/Tuples/27165072/"
 )
+FALSE_SIGN_SOURCE_DIR = pathlib.Path(
+    "/eos/lhcb/user/n/njurik/D02Kpipipi/PGun/Tuples/27165077/2018_dw"
+)
 
 AMPGEN_DIR = DUMP_DIR / "ampgen"
 PGUN_DIR = DUMP_DIR / "pgun"
+FALSE_SIGN_DIR = DUMP_DIR / "false_sign_pgun"
 MC_DIR = DUMP_DIR / "mc"
 DATA_DIR = DUMP_DIR / "data"
 UPPERMASS_DIR = DUMP_DIR / "upper_mass"
@@ -115,6 +119,14 @@ def pgun_dump(sign: str, n: int) -> pathlib.Path:
 
     """
     return pgun_dir(sign) / f"{n}.pkl"
+
+
+def false_sign_dump(n: int) -> pathlib.Path:
+    """
+    Returns the location of the n'th false sign particle gun dump
+
+    """
+    return FALSE_SIGN_DIR / f"{n}.pkl"
 
 
 def data_dir(year: str, sign: str, magnetisation: str) -> pathlib.Path:
