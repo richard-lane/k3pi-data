@@ -71,12 +71,13 @@ def main():
     Create a plot
 
     """
+    year, magnetisation = "2018", "magdown"
     # These return generators
     rs_data = _parameterise(
-        util.flip_momenta(pd.concat(get.data("2018", "cf", "magdown")))
+        util.flip_momenta(pd.concat(get.data(year, "cf", magnetisation)))
     )
     ws_data = _parameterise(
-        util.flip_momenta(pd.concat(get.data("2018", "dcs", "magdown")))
+        util.flip_momenta(pd.concat(get.data(year, "dcs", magnetisation)))
     )
 
     rs_pgun = _parameterise(
@@ -86,12 +87,24 @@ def main():
         util.flip_momenta(get.particle_gun("dcs", show_progress=True))
     )
 
+    rs_mc = _parameterise(util.flip_momenta(get.mc(year, "cf", magnetisation)))
+    ws_mc = _parameterise(util.flip_momenta(get.mc(year, "dcs", magnetisation)))
+
     rs_ampgen = _parameterise(get.ampgen("cf"))
     ws_ampgen = _parameterise(get.ampgen("dcs"))
 
     _plot(
-        [rs_data, rs_pgun, rs_ampgen, ws_data, ws_pgun, ws_ampgen],
-        ["CF data", "CF pgun", "CF AmpGen", "DCS data", "DCS pgun", "DCS AmpGen"],
+        [rs_data, rs_mc, rs_pgun, rs_ampgen, ws_data, ws_mc, ws_pgun, ws_ampgen],
+        [
+            "CF data",
+            "CF MC",
+            "CF pgun",
+            "CF AmpGen",
+            "DCS data",
+            "DCS MC",
+            "DCS pgun",
+            "DCS AmpGen",
+        ],
     )
 
     plt.show()
