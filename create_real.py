@@ -62,6 +62,10 @@ def _real_df(tree) -> pd.DataFrame:
 
     # Read other variables - for e.g. the BDT cuts, kaon signs, etc.
     df["K ID"] = tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
+    for branch, array in zip(
+        training_vars.training_var_names(), training_vars.training_var_functions()
+    ):
+        df[branch] = array(tree)[keep]
 
     # D, D* masses
     df["D0 mass"] = tree["Dst_ReFit_D0_M"].array()[:, 0][keep]
@@ -74,7 +78,7 @@ def _real_df(tree) -> pd.DataFrame:
 
 
 def main(year: str, sign: str, magnetisation: str) -> None:
-    """ Create a DataFrame holding real data info """
+    """Create a DataFrame holding real data info"""
     # If the dir doesnt exist, create it
     if not definitions.DATA_DIR.is_dir():
         os.mkdir(definitions.DATA_DIR)
