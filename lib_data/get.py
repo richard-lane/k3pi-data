@@ -50,7 +50,34 @@ def particle_gun(sign: str, show_progress: bool = False) -> pd.DataFrame:
 
         except FileNotFoundError as err:
             print("=" * 79)
-            print(f"create the {sign} ampgen dump by running `create_ampgen.py`")
+            print(f"create the {sign} particle gun dump by running `create_pgun.py`")
+            print("=" * 79)
+
+            raise err
+
+    return pd.concat(dfs)
+
+
+def false_sign(show_progress: bool = False) -> pd.DataFrame:
+    """
+    Get the false sign particle gun dataframes, concatenate them and return
+
+    :param show_progress: whether to display a progress bar
+
+    """
+    dfs = []
+    paths = glob.glob(str(definitions.FALSE_SIGN_DIR / "*"))
+
+    progress_fcn = tqdm if show_progress else lambda x: x
+
+    for path in progress_fcn(paths):
+        try:
+            with open(path, "rb") as df_f:
+                dfs.append(pickle.load(df_f))
+
+        except FileNotFoundError as err:
+            print("=" * 79)
+            print(f"create the false sign dumps by running `create_false_sign.py`")
             print("=" * 79)
 
             raise err

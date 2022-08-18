@@ -27,6 +27,10 @@ def _plot(points: List[np.ndarray], labels: List[str]) -> Tuple[plt.Figure, plt.
     hist_kw = {"density": True, "histtype": "step"}
     for i, axis in tqdm(enumerate(ax.ravel())):
         for arr, label in zip(points, labels):
+            if label.startswith("False"):
+                hist_kw["histtype"] = "stepfilled"
+                hist_kw["alpha"] = 0.5
+
             # Might want to plot up to some maximum lifetime, to illustrate something
             max_lifetimes = np.inf
             mask = arr[:, -1] < max_lifetimes
@@ -40,6 +44,8 @@ def _plot(points: List[np.ndarray], labels: List[str]) -> Tuple[plt.Figure, plt.
 
             else:
                 axis.hist(arr[:, i], **hist_kw, label=label)
+            hist_kw["histtype"] = "step"
+            hist_kw["alpha"] = 1
 
         # Remove the bins from the dict once we've plotted all the points
         hist_kw.pop("bins")
@@ -73,12 +79,12 @@ def main():
     """
     year, magnetisation = "2018", "magdown"
     # These return generators
-    rs_data = _parameterise(
-        util.flip_momenta(pd.concat(get.data(year, "cf", magnetisation)))
-    )
-    ws_data = _parameterise(
-        util.flip_momenta(pd.concat(get.data(year, "dcs", magnetisation)))
-    )
+    # rs_data = _parameterise(
+    #     util.flip_momenta(pd.concat(get.data(year, "cf", magnetisation)))
+    # )
+    # ws_data = _parameterise(
+    #     util.flip_momenta(pd.concat(get.data(year, "dcs", magnetisation)))
+    # )
 
     rs_pgun = _parameterise(
         util.flip_momenta(get.particle_gun("cf", show_progress=True))
@@ -87,25 +93,43 @@ def main():
         util.flip_momenta(get.particle_gun("dcs", show_progress=True))
     )
 
-    rs_mc = _parameterise(util.flip_momenta(get.mc(year, "cf", magnetisation)))
-    ws_mc = _parameterise(util.flip_momenta(get.mc(year, "dcs", magnetisation)))
+    false_df = get.false_sign(show_progress=True)
+    false_sign = _parameterise(
+        util.flip_momenta(false_df)
+    )  # Might want to flip momentum the other way
 
-    rs_ampgen = _parameterise(get.ampgen("cf"))
-    ws_ampgen = _parameterise(get.ampgen("dcs"))
+    # rs_mc = _parameterise(util.flip_momenta(get.mc(year, "cf", magnetisation)))
+    # ws_mc = _parameterise(util.flip_momenta(get.mc(year, "dcs", magnetisation)))
+
+    # rs_ampgen = _parameterise(get.ampgen("cf"))
+    # ws_ampgen = _parameterise(get.ampgen("dcs"))
 
     _plot(
-        [rs_data, rs_mc, rs_pgun, rs_ampgen, ws_data, ws_mc, ws_pgun, ws_ampgen],
         [
-            "CF data",
-            "CF MC",
+            # rs_data,
+            # rs_mc,
+            rs_pgun,
+            # rs_ampgen,
+            false_sign,
+            # ws_data,
+            # ws_mc,
+            ws_pgun,
+            # ws_ampgen,
+        ],
+        [
+            # "CF data",
+            # "CF MC",
             "CF pgun",
-            "CF AmpGen",
-            "DCS data",
-            "DCS MC",
+            # "CF AmpGen",
+            "False sign pgun",
+            # "DCS data",
+            # "DCS MC",
             "DCS pgun",
-            "DCS AmpGen",
+            # "DCS AmpGen",
         ],
     )
+
+    plt.savefig("projs.png")
 
     plt.show()
 
