@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from lib_data import definitions
 from lib_data import cuts
+from lib_data import training_vars
 
 
 def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
