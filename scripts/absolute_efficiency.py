@@ -20,9 +20,11 @@ from lib_data import definitions
 from lib_data import cuts
 
 
-def _n_reco(data_tree, hlt_tree) -> int:
+def _n_reco(data_tree, hlt_tree) -> Tuple[int, int]:
     """
     Number of events reconstructed
+
+    returns number of reco K+ and K-
 
     """
     # Mask to perform straight cuts
@@ -34,7 +36,19 @@ def _n_reco(data_tree, hlt_tree) -> int:
     # Combine with the background category mask
     keep &= cuts.bkgcat(data_tree)
 
-    return np.sum(keep)
+    k_id = data_tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
+
+    return np.sum(k_id > 0), np.sum(k_id < 0)
+
+
+def _n_gen(gen_tree) -> Tuple[int, int]:
+    """
+    Number of events generated
+
+    """
+    k_id = gen_tree["D0_P0_ID"].array()
+
+    return np.sum(k_id > 0), np.sum(k_id < 0)
 
 
 def _efficiency_and_err(n_gen: int, n_reco: int) -> Tuple[float, float]:
@@ -58,7 +72,8 @@ def _calculate(source_dir, label, out_dict) -> None:
     # Some folders might break
     broken_folders = []
 
-    n_reco, n_gen = 0, 0
+    n_reco_plus, n_gen_plus = 0, 0
+    n_reco_minus, n_gen_minus = 0, 0
 
     # Iterate over files, incrementing counters
     for i, folder in enumerate(source_dir.glob("*")):
@@ -73,10 +88,14 @@ def _calculate(source_dir, label, out_dict) -> None:
                 hlt_tree = hlt_f["DecayTree"]
 
                 # Do cuts on the reco bit, count the entries
-                n_reco += _n_reco(reco_tree, hlt_tree)
+                a, b = _n_reco(reco_tree, hlt_tree)
+                n_reco_plus += a
+                n_reco_minus += a
 
                 # No cuts for the generator level
-                n_gen += gen_tree.numentries
+                a, b = _n_gen(gen_tree)
+                n_gen_plus += a
+                n_gen_minus += b
 
         except FileNotFoundError:
             broken_folders.append(str(folder))
@@ -88,9 +107,13 @@ def _calculate(source_dir, label, out_dict) -> None:
             "This may be expected, e.g. there may be already merged files also in the dir"
         )
 
-    efficiency, err = _efficiency_and_err(n_gen, n_reco)
-    out_dict[f"{label}_eff"] = efficiency
-    out_dict[f"{label}_err"] = err
+    plus_efficiency, plus_err = _efficiency_and_err(n_gen_plus, n_reco_plus)
+    minus_efficiency, minus_err = _efficiency_and_err(n_gen_minus, n_reco_minus)
+
+    out_dict[f"plus_{label}_eff"] = plus_efficiency
+    out_dict[f"plus_{label}_err"] = plus_err
+    out_dict[f"minus_{label}_eff"] = minus_efficiency
+    out_dict[f"minus_{label}_err"] = minus_err
 
 
 def _plot(labels: Tuple, efficiencies: Tuple, errors: Tuple) -> None:
@@ -101,15 +124,17 @@ def _plot(labels: Tuple, efficiencies: Tuple, errors: Tuple) -> None:
     fig, ax = plt.subplots()
     for i, (label, efficiency, error) in enumerate(zip(labels, efficiencies, errors)):
         ax.errorbar(
-            [i],
+            [0],
             efficiency,
             yerr=error,
             label=label,
-            fmt="k+",
+            fmt="+",
         )
 
+    ax.legend()
     ax.set_xticks([i for i, _ in enumerate(labels)])
-    ax.set_xticklabels(labels)
+    ax.set_xlim(-1, 1)
+    ax.set_xticklabels([])
 
     fig.savefig("efficiencies.png")
 
@@ -143,9 +168,11 @@ def main():
         proc.join()
 
     _plot(
-        labels,
-        [out_dict[f"{label}_eff"] for label in labels],
-        [out_dict[f"{label}_err"] for label in labels],
+        ["$K^+$" + l for l in labels] + ["$K^-$" + l for l in labels],
+        [out_dict[f"plus_{label}_eff"] for label in labels]
+        + [out_dict[f"minus_{label}_eff"] for label in labels],
+        [out_dict[f"plus_{label}_err"] for label in labels]
+        + [out_dict[f"minus_{label}_err"] for label in labels],
     )
 
 
