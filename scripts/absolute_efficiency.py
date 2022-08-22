@@ -12,6 +12,7 @@ from typing import Tuple
 from multiprocessing import Manager, Process
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import uproot
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -120,21 +121,40 @@ def _plot(labels: Tuple, efficiencies: Tuple, errors: Tuple) -> None:
     """
     Plot efficiencies
 
+    TODO labels is unused, so could clean things up a bit by removing it
+
     """
+    indices = list(range(len(labels)))  # wtf
+    n = len(indices)
+
+    colours = "r", "g", "b"
+
     fig, ax = plt.subplots()
-    for i, (label, efficiency, error) in enumerate(zip(labels, efficiencies, errors)):
+    # first half of the list is K+
+    for i in indices[: n // 2]:
         ax.errorbar(
-            [0],
-            efficiency,
-            yerr=error,
-            label=label,
-            fmt="+",
+            [-2],
+            efficiencies[i],
+            yerr=errors[i],
+            fmt=f"{colours[i]}+",
         )
 
-    ax.legend()
-    ax.set_xticks([i for i, _ in enumerate(labels)])
-    ax.set_xlim(-1, 1)
-    ax.set_xticklabels([])
+    # Second half of the list is K-
+    for i in indices[n // 2 :]:
+        ax.errorbar(
+            [2],
+            efficiencies[i],
+            yerr=errors[i],
+            fmt=f"{colours[i - 3]}+",
+        )
+
+    patches = [mpatches.Patch(color=c) for c in colours]
+    ax.legend(handles=patches, labels=("false", "cf", "dcs"))
+
+    ax.set_xticks([-2, 2])
+    ax.set_xlim(-3, 3)
+    ax.set_xticklabels([r"$K^+$", r"$K^-$"])
+    ax.set_ylabel(r"efficiency /%")
 
     fig.savefig("efficiencies.png")
 
