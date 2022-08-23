@@ -8,11 +8,13 @@ The data lives on lxplus; this script should therefore be run on lxplus.
 """
 import os
 import pickle
+import pathlib
 import argparse
-import uproot
+from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import uproot
 
 from lib_data import definitions
 from lib_data import cuts
@@ -78,6 +80,26 @@ def _real_df(tree) -> pd.DataFrame:
     return df
 
 
+def _create_dump(
+    data_path: pathlib.Path, dump_path: pathlib.Path, tree_name: str
+) -> None:
+    """
+    Create a pickle dump of a dataframe
+
+    """
+    if dump_path.is_file():
+        return
+
+    with uproot.open(data_path) as data_f:
+        # Create the dataframe
+        dataframe = _real_df(data_f[tree_name])
+
+    # Dump it
+    print(f"dumping {dump_path}")
+    with open(dump_path, "wb") as dump_f:
+        pickle.dump(dataframe, dump_f)
+
+
 def main(year: str, sign: str, magnetisation: str) -> None:
     """Create a DataFrame holding real data info"""
     # If the dir doesnt exist, create it
@@ -87,20 +109,19 @@ def main(year: str, sign: str, magnetisation: str) -> None:
         os.mkdir(definitions.data_dir(year, sign, magnetisation))
 
     # Iterate over input files
-    tree_name = definitions.data_tree(sign)
-    for path in tqdm(definitions.data_files(year, magnetisation)):
-        # If the dump already exists, do nothing
-        dump_path = definitions.data_dump(path, year, sign, magnetisation)
-        if dump_path.is_file():
-            continue
+    data_paths = definitions.data_files(year, magnetisation)
+    dump_paths = [
+        definitions.data_dump(path, year, sign, magnetisation) for path in data_paths
+    ]
 
-        with uproot.open(path) as data_f:
-            # Create the dataframe
-            dataframe = _real_df(data_f[tree_name])
+    # Ugly - also have a list of tree names so i can use a starmap
+    tree_names = [definitions.data_tree(sign) for _ in dump_paths]
 
-        # Dump it
-        with open(dump_path, "wb") as dump_f:
-            pickle.dump(dataframe, dump_f)
+    with Pool(processes=8) as pool:
+        tqdm(
+            pool.starmap(_create_dump, zip(data_paths, dump_paths, tree_names)),
+            total=len(dump_paths),
+        )
 
 
 if __name__ == "__main__":

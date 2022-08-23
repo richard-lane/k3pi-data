@@ -77,6 +77,12 @@ def _uppermass_df(gen: np.random.Generator, tree) -> pd.DataFrame:
     df["K ID"] = tree["Dst_ReFit_D0_Kplus_ID"].array()[:, 0][keep]
     df["slow pi ID"] = tree["Dst_ReFit_piplus_ID"].array()[:, 0][keep]
 
+    # Read times into dataframe
+    # 0.3 to convert from ctau to ps
+    # 0.41 to convert from ps to D lifetimes
+    # Take the first (best fit) value from each
+    df["time"] = tree["Dst_ReFit_D0_ctau"].array()[:, 0][keep] / (0.3 * 0.41)
+
     # Train test
     util.add_train_column(gen, df)
 
@@ -97,6 +103,7 @@ def _create_dump(
     # Create a new random generator every time
     # This isn't very good, but also it isn't a disaster
     # As long as the seed is actually random
+    # TODO seed with pid, time, etc
     gen = np.random.default_rng()
 
     with uproot.open(data_path) as data_f:
@@ -127,7 +134,7 @@ def main(year: str, sign: str, magnetisation: str) -> None:
     # Ugly - also have a list of tree names so i can use a starmap
     tree_names = [definitions.data_tree(sign) for _ in dump_paths]
 
-    with Pool(processes=6) as pool:
+    with Pool(processes=8) as pool:
         tqdm(
             pool.starmap(_create_dump, zip(data_paths, dump_paths, tree_names)),
             total=len(dump_paths),
