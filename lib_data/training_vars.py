@@ -2,10 +2,11 @@
 Read the right branches, do the right stuff to the data
 to get it into the right format for the classifier
 
-Some branches we can just read directly; others require some calculation (e.g. the sum of daughter pT) before they can be used
+Some branches we can just read directly; others require some calculation
+(e.g. the sum of daughter pT) before they can be used
 
 """
-from typing import Tuple, Generator, Callable
+from typing import Tuple, Generator
 
 import numpy as np
 
@@ -220,26 +221,43 @@ def daughters_sum_pt(tree) -> np.ndarray:
     return np.sum(_refit_daughters_pt(tree), axis=0)
 
 
+def _training_var_names_and_functions() -> Tuple:
+    """
+    Both of them together, to make it easier to comment things out when I'm
+    doing studies
+
+    Returns (functions, names) as tuples
+
+    """
+    # Do it like this so we return two tuples but its easy to just comment
+    # them out in the right way
+    return tuple(
+        zip(
+            *(
+                (refit_chi2, r"ReFit $\chi^2$"),
+                (endvertex_chi2, r"D0 End Vtx $\chi^2$"),
+                (orivx_chi2, r"D0 Origin Vtx $\chi^2$"),
+                (slow_pi_prob_nn_pi, r"$\pi_s$ ProbNN$\pi$"),
+                (d0_pt, r"D0 $p_T$"),
+                (slow_pi_pt, r"$\pi_s$ $p_T$"),
+                (slow_pi_ipchi2, r"$\pi_s$ IP$\chi^2$"),
+                (pions_max_pt, r"$3\pi$ max $p_T$"),
+                (pions_min_pt, r"$3\pi$ min $p_T$"),
+                (pions_sum_pt, r"$3\pi$ sum $p_T$"),
+                (daughters_max_pt, r"$K3\pi$ max $p_T$"),
+                (daughters_min_pt, r"$K3\pi$ min $p_T$"),
+                (daughters_sum_pt, r"$K3\pi$ sum $p_T$"),
+            )
+        )
+    )
+
+
 def training_var_functions() -> Tuple:
     """
     Returns a tuple of functions used for finding the training variables
 
     """
-    return (
-        refit_chi2,
-        endvertex_chi2,
-        orivx_chi2,
-        slow_pi_prob_nn_pi,
-        d0_pt,
-        slow_pi_pt,
-        slow_pi_ipchi2,
-        pions_max_pt,
-        pions_min_pt,
-        pions_sum_pt,
-        daughters_max_pt,
-        daughters_min_pt,
-        daughters_sum_pt,
-    )
+    return _training_var_names_and_functions()[0]
 
 
 def training_var_names() -> Tuple:
@@ -249,18 +267,4 @@ def training_var_names() -> Tuple:
     Contains matplotlib-style LaTeX formatting: suitable for using as plot labels, etc.
 
     """
-    return (
-        r"ReFit $\chi^2$",
-        r"D0 End Vtx $\chi^2$",
-        r"D0 Origin Vtx $\chi^2$",
-        r"$\pi_s$ ProbNN$\pi$",
-        r"D0 $p_T$",
-        r"$\pi_s$ $p_T$",
-        r"$\pi_s$ IP$\chi^2$",
-        r"$3\pi$ max $p_T$",
-        r"$3\pi$ min $p_T$",
-        r"$3\pi$ sum $p_T$",
-        r"$K3\pi$ max $p_T$",
-        r"$K3\pi$ min $p_T$",
-        r"$K3\pi$ sum $p_T$",
-    )
+    return _training_var_names_and_functions()[1]
