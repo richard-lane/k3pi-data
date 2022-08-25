@@ -100,22 +100,44 @@ def _create_dump(
         pickle.dump(dataframe, dump_f)
 
 
-def main(year: str, sign: str, magnetisation: str) -> None:
-    """Create a DataFrame holding real data info"""
+def _luminosity(files: list) -> float:
+    """
+    Get the total luminosity for a collection of files
+
+    """
+    total_lumi = 0
+    for path in tqdm(files):
+        with uproot.open(path) as root_file:
+            total_lumi += np.sum(
+                root_file["GetIntegratedLuminosity/LumiTuple"][
+                    "IntegratedLuminosity"
+                ].array()
+            )
+
+    return total_lumi
+
+
+def main(args: argparse.Namespace) -> None:
+    """ Create a DataFrame holding real data info"""
+    year, sign, magnetisation = args.year, args.sign, args.magnetisation
+    data_paths = definitions.data_files(year, magnetisation)
+
+    if args.print_lumi:
+        print(f"total luminosity: {_luminosity(data_paths)}")
+        return
+
     # If the dir doesnt exist, create it
     if not definitions.DATA_DIR.is_dir():
         os.mkdir(definitions.DATA_DIR)
     if not definitions.data_dir(year, sign, magnetisation).is_dir():
         os.mkdir(definitions.data_dir(year, sign, magnetisation))
 
-    # Iterate over input files
-    data_paths = definitions.data_files(year, magnetisation)
     dump_paths = [
         definitions.data_dump(path, year, sign, magnetisation) for path in data_paths
     ]
-
-    # Ugly - also have a list of tree names so i can use a starmap
-    tree_names = [definitions.data_tree(sign) for _ in dump_paths]
+    tree_name = definitions.data_tree(sign)
+    # Ugly - also have a list of tree names so i can use a starmap to iterate over both in parallel
+    tree_names = [tree_name for _ in dump_paths]
 
     with Pool(processes=8) as pool:
         tqdm(
@@ -146,6 +168,11 @@ if __name__ == "__main__":
         help="magnetisation direction",
     )
 
-    args = parser.parse_args()
+    # TODO use a subparser to make args conditional on this
+    parser.add_argument(
+        "--print_lumi",
+        action="store_true",
+        help="Iterate over all files, print total luminosity and exit.",
+    )
 
-    main(args.year, args.sign, args.magnetisation)
+    main(parser.parse_args())
