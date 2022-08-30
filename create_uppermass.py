@@ -110,22 +110,38 @@ def _create_dump(
         # Create the dataframe
         dataframe = _uppermass_df(gen, data_f[tree_name])
 
+        # Add also a column for the luminosity
+        # Do this by adding a column of zeros and then filling the first
+        # entry with the required luminosity
+        dataframe["luminosity"] = np.zeros(len(dataframe))
+        dataframe.loc[0, "luminosity"] = util.luminosity(data_path)
+
     # Dump it
     print(f"dumping {dump_path}")
     with open(dump_path, "wb") as dump_f:
         pickle.dump(dataframe, dump_f)
 
 
-def main(year: str, sign: str, magnetisation: str) -> None:
-    """ Create a DataFrame holding real data info """
+def main(args: argparse.Namespace) -> None:
+    """
+    Create a DataFrame holding real data info from the upper mass sideband
+
+    Used as a background sample
+
+    """
+    year, sign, magnetisation = args.year, args.sign, args.magnetisation
+    data_paths = definitions.data_files(year, magnetisation)
+
+    if args.print_lumi:
+        print(f"total luminosity: {util.total_luminosity(data_paths)}")
+        return
+
     # If the dir doesnt exist, create it
     if not definitions.UPPERMASS_DIR.is_dir():
         os.mkdir(definitions.UPPERMASS_DIR)
     if not definitions.uppermass_dir(year, sign, magnetisation).is_dir():
         os.mkdir(definitions.uppermass_dir(year, sign, magnetisation))
 
-    # Iterate over input files
-    data_paths = definitions.data_files(year, magnetisation)
     dump_paths = [
         definitions.uppermass_dump(path, year, sign, magnetisation)
         for path in data_paths
@@ -163,6 +179,11 @@ if __name__ == "__main__":
         help="magnetisation direction",
     )
 
-    args = parser.parse_args()
+    # TODO use a subparser to make args conditional on this
+    parser.add_argument(
+        "--print_lumi",
+        action="store_true",
+        help="Iterate over all files, print total luminosity and exit.",
+    )
 
-    main(args.year, args.sign, args.magnetisation)
+    main(parser.parse_args())

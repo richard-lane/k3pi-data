@@ -19,6 +19,7 @@ import uproot
 from lib_data import definitions
 from lib_data import cuts
 from lib_data import training_vars
+from lib_data import util
 
 
 def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
@@ -100,30 +101,13 @@ def _create_dump(
         pickle.dump(dataframe, dump_f)
 
 
-def _luminosity(files: list) -> float:
-    """
-    Get the total luminosity for a collection of files
-
-    """
-    total_lumi = 0
-    for path in tqdm(files):
-        with uproot.open(path) as root_file:
-            total_lumi += np.sum(
-                root_file["GetIntegratedLuminosity/LumiTuple"][
-                    "IntegratedLuminosity"
-                ].array()
-            )
-
-    return total_lumi
-
-
 def main(args: argparse.Namespace) -> None:
     """ Create a DataFrame holding real data info"""
     year, sign, magnetisation = args.year, args.sign, args.magnetisation
     data_paths = definitions.data_files(year, magnetisation)
 
     if args.print_lumi:
-        print(f"total luminosity: {_luminosity(data_paths)}")
+        print(f"total luminosity: {util.total_luminosity(data_paths)}")
         return
 
     # If the dir doesnt exist, create it
@@ -135,9 +119,8 @@ def main(args: argparse.Namespace) -> None:
     dump_paths = [
         definitions.data_dump(path, year, sign, magnetisation) for path in data_paths
     ]
-    tree_name = definitions.data_tree(sign)
     # Ugly - also have a list of tree names so i can use a starmap to iterate over both in parallel
-    tree_names = [tree_name for _ in dump_paths]
+    tree_names = [definitions.data_tree(sign) for _ in dump_paths]
 
     with Pool(processes=8) as pool:
         tqdm(

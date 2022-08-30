@@ -2,9 +2,11 @@
 Utility functions that may be useful
 
 """
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+import uproot
 
 from . import definitions
 
@@ -122,3 +124,28 @@ def add_train_column(
     assert (0.0 <= train_fraction) and (train_fraction <= 1.0)
 
     dataframe["train"] = gen.random(len(dataframe)) < train_fraction
+
+
+def luminosity(filepath: str) -> float:
+    """
+    Get the luminosity from a file
+
+    """
+    with uproot.open(filepath) as root_file:
+        return np.sum(
+            root_file["GetIntegratedLuminosity/LumiTuple"][
+                "IntegratedLuminosity"
+            ].array()
+        )
+
+
+def total_luminosity(files: List[str]) -> float:
+    """
+    Get the total luminosity for a collection of files
+
+    """
+    total_lumi = 0
+    for path in tqdm(files):
+        total_lumi += luminosity(path)
+
+    return total_lumi
