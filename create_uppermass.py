@@ -23,6 +23,33 @@ from lib_data import training_vars
 from lib_data import util
 
 
+def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
+    """
+    Read momenta into the dataframe, in place
+
+    Reads from the tree, applies the keep mask, adds columns to df
+
+    """
+    suffices = "PX", "PY", "PZ", "PE"
+    branches = (
+        *(f"Dst_ReFit_D0_Kplus_{s}" for s in suffices),
+        *(f"Dst_ReFit_D0_piplus_{s}" for s in suffices),
+        *(f"Dst_ReFit_D0_piplus_0_{s}" for s in suffices),
+        *(f"Dst_ReFit_D0_piplus_1_{s}" for s in suffices),
+        *(f"Dst_ReFit_piplus_{s}" for s in suffices),
+    )
+
+    for branch, column in zip(
+        branches,
+        [
+            *definitions.MOMENTUM_COLUMNS,
+            *(f"slowpi_{s}" for s in ("Px", "Py", "Pz", "E")),
+        ],
+    ):
+        # Take the first (best fit) value for each momentum
+        df[column] = tree[branch].array()[:, 0][keep]
+
+
 def _bkg_keep(d_mass: np.ndarray, delta_m: np.ndarray) -> np.ndarray:
     """
     Mask of events to keep after background mass cuts
@@ -82,6 +109,9 @@ def _uppermass_df(gen: np.random.Generator, tree) -> pd.DataFrame:
     # 0.41 to convert from ps to D lifetimes
     # Take the first (best fit) value from each
     df["time"] = tree["Dst_ReFit_D0_ctau"].array()[:, 0][keep] / (0.3 * 0.41)
+
+    # Also want momenta
+    _add_momenta(df, tree, keep)
 
     # Train test
     util.add_train_column(gen, df)
