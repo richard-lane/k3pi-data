@@ -35,9 +35,16 @@ def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
         *(f"Dst_ReFit_D0_piplus_{s}" for s in suffices),
         *(f"Dst_ReFit_D0_piplus_0_{s}" for s in suffices),
         *(f"Dst_ReFit_D0_piplus_1_{s}" for s in suffices),
+        *(f"Dst_ReFit_piplus_{s}" for s in suffices),
     )
 
-    for branch, column in zip(branches, definitions.MOMENTUM_COLUMNS):
+    for branch, column in zip(
+        branches,
+        [
+            *definitions.MOMENTUM_COLUMNS,
+            *(f"slowpi_{s}" for s in ("Px", "Py", "Pz", "E")),
+        ],
+    ):
         # Take the first (best fit) value for each momentum
         df[column] = tree[branch].array()[:, 0][keep]
 
