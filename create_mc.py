@@ -16,6 +16,7 @@ from lib_data import definitions
 from lib_data import cuts
 from lib_data import training_vars
 from lib_data import util
+from lib_data import corrections
 
 
 def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
@@ -77,6 +78,9 @@ def _mc_df(gen: np.random.Generator, tree) -> pd.DataFrame:
     df["D0 mass"] = tree["Dst_ReFit_D0_M"].array()[:, 0][keep]
     df["D* mass"] = tree["Dst_ReFit_M"].array()[:, 0][keep]
 
+    # track/SPD for event multiplicity reweighting
+    corrections.add_multiplicity_columns(tree, df, keep)
+
     # Train test
     util.add_train_column(gen, df)
 
@@ -109,7 +113,7 @@ def main(year: str, sign: str, magnetisation: str) -> None:
 
     # Concatenate dataframes and dump
     with open(dump_path, "wb") as dump_f:
-        pickle.dump(pd.concat(dfs), dump_f)
+        pickle.dump(pd.concat(dfs, ignore_index=True), dump_f)
 
 
 if __name__ == "__main__":

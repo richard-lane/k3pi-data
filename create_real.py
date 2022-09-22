@@ -20,6 +20,7 @@ from lib_data import definitions
 from lib_data import cuts
 from lib_data import training_vars
 from lib_data import util
+from lib_data import corrections
 
 
 def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
@@ -50,7 +51,7 @@ def _add_momenta(df: pd.DataFrame, tree, keep: np.ndarray) -> None:
 
 
 def _keep(tree):
-    """ mask of evts to keep """
+    """mask of evts to keep"""
     # Mask to perform straight cuts
     keep = cuts.sanity_keep(tree)
 
@@ -92,6 +93,9 @@ def _real_df(tree) -> pd.DataFrame:
     # Slow pi ID
     df["slow pi ID"] = tree["Dst_ReFit_piplus_ID"].array()[:, 0][keep]
 
+    # track/SPD for event multiplicity reweighting
+    corrections.add_multiplicity_columns(tree, df, keep)
+
     return df
 
 
@@ -116,7 +120,7 @@ def _create_dump(
 
 
 def _n(tree):
-    """ number of evts in signal region in a tree """
+    """number of evts in signal region in a tree"""
     keep = _keep(tree)
     delta_m = (
         tree["Dst_ReFit_M"].array()[:, 0][keep]
@@ -129,7 +133,7 @@ def _n(tree):
 
 
 def _n_region(paths, sign):
-    """ Count the total number of evts in signal region """
+    """Count the total number of evts in signal region"""
     total = 0
     lumi = 0
     tree_name = definitions.data_tree(sign)
@@ -148,7 +152,7 @@ def _n_region(paths, sign):
 
 
 def main(args: argparse.Namespace) -> None:
-    """ Create a DataFrame holding real data info"""
+    """Create a DataFrame holding real data info"""
     year, sign, magnetisation = args.year, args.sign, args.magnetisation
     data_paths = definitions.data_files(year, magnetisation)
 
